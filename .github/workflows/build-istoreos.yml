@@ -157,7 +157,7 @@ jobs:
 
     - name: 清理并复制固件到对应目录
       id: clean
-      if: ${{ steps.compile.outputs.status }} == 'success' && !cancelled()
+      if: ${{ steps.compile.outputs.status == 'success' && !cancelled() }}
       run: |
         # Clean up server space
         cd openwrt/
@@ -193,7 +193,7 @@ jobs:
 
     - name: 上传固件
       uses: ncipollo/release-action@main
-      if: ${{ steps.clean.outputs.status }} == 'success' && !cancelled()
+      if: ${{ steps.clean.outputs.status == 'success' && !cancelled() }}
       with:
         tag: ${{ env.RELEASE_TAG }}
         artifacts: openwrt/output/*
