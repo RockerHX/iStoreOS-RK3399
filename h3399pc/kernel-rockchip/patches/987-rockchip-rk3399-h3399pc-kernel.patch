@@ -10,7 +10,7 @@
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-gru-scarlet-dumo.dtb
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3399-h3399pc.dts
-@@ -0,0 +1,835 @@
+@@ -0,0 +1,837 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2017 Fuzhou Rockchip Electronics Co., Ltd.
@@ -18,6 +18,8 @@
 +
 +/dts-v1/;
 +#include <dt-bindings/input/input.h>
++#include <dt-bindings/pwm/pwm.h>
++#include <dt-bindings/gpio/gpio.h>
 +#include "rk3399.dtsi"
 +#include "rk3399-opp.dtsi"
 +
