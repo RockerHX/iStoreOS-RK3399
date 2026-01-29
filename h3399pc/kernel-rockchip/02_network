@@ -1,0 +1,23 @@
+lan_mac=""
+wan_mac=""
+
+board_config_update
+
+case "$board" in
+rockchip,rk3399-sharevdi-h3399pc)
+	# 参考 NanoPi R4S 的配置
+	# 从 eMMC CID 生成唯一 MAC 地址
+	wan_mac=$(generate_mac_from_mmc_cid mmcblk1)
+	lan_mac=$(macaddr_add "$wan_mac" 1)
+	# WAN 口: eth1 (PCIe RTL8168)
+	# LAN 口: eth0 (gmac)
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	;;
+esac
+
+[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+
+board_config_flush
+
+exit 0
