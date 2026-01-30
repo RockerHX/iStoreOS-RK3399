@@ -9,18 +9,19 @@ on:
         required: false
         default: 'false'
       board:
-        description: "Select device board"
+        description: "选择设备板型 | Select device board (选择 'all' 编译所有板子)"
         required: false
-        default: "fnet3399"
+        default: "all"
         type: choice
         options:
+          - all
+          - h3399pc
           - am40
           - dg3399
           - dlfr100
           - fine3399
           - fmx1-pro
           - fnet3399
-          - h3399pc
           - king3399
           - mpc1903
           - sv901-eaio
@@ -34,9 +35,6 @@ env:
   REPO_URL: https://github.com/istoreos/istoreos
   # REPO_BRANCH: main
   FEEDS_CONF: feeds.conf.default
-  CONFIG_FILE: ${{ inputs.board }}/.config
-  DIY_P1_SH: ${{ inputs.board }}/diy-part1.sh
-  DIY_P2_SH: ${{ inputs.board }}/diy-part2.sh
   UPLOAD_BIN_DIR: true
   UPLOAD_FIRMWARE: true
   UPLOAD_RELEASE: true
@@ -45,7 +43,7 @@ env:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         REPO_BRANCH:
@@ -53,10 +51,13 @@ jobs:
           - istoreos-24.10
         ARCHITECTURE:
           - aarch64_cortex-a53
-        os:
-          - ubuntu-22.04
-
+        board: ${{ github.event.inputs.board == 'all' && fromJSON('["h3399pc","am40","dg3399","dlfr100","fine3399","fmx1-pro","fnet3399","king3399","mpc1903","sv901-eaio","tn3399","tpm-312","tvi3315a","xiaobao-nas","zysj-1739a"]') || fromJSON(format('["{0}"]', github.event.inputs.board)) }}
       fail-fast: false
+    
+    env:
+      CONFIG_FILE: ${{ matrix.board }}/.config
+      DIY_P1_SH: ${{ matrix.board }}/diy-part1.sh
+      DIY_P2_SH: ${{ matrix.board }}/diy-part2.sh
 
     steps:
     - name: 准备完成
@@ -146,10 +147,13 @@ jobs:
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
-    - name: 编译固件 [ ${{ inputs.board }} ]
+    - name: 编译固件 [ ${{ matrix.board }} ]
       id: compile
       run: |
         cd openwrt
+        echo "=========================================="
+        echo "正在编译板子: ${{ matrix.board }}"
+        echo "=========================================="
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
         echo "FILE_DATE=_$(date +"%Y%m%d")" >> $GITHUB_ENV
@@ -186,7 +190,13 @@ jobs:
 
     - name: 设置 Release Tag or date
       run: |
-        RELEASE_TAG="iStoreOS-24.10-RK3399-$(date +%Y.%m)"
+        if [[ "${{ github.event.inputs.board }}" == "all" ]]; then
+          # 全部编译：使用月度标签
+          RELEASE_TAG="iStoreOS-24.10-RK3399-$(date +%Y.%m)"
+        else
+          # 单板编译：包含板子名称
+          RELEASE_TAG="iStoreOS-24.10-${{ matrix.board }}-$(date +%Y.%m.%d)"
+        fi
         echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_ENV
         BUILD_DATE="$(date +%Y.%m.%d)"
         echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
