@@ -204,12 +204,26 @@ jobs:
         body: |  
           ### iStoreOS Image Information  
           - 💻 CPU: rk3399    
+          - 📦 设备: ${{ inputs.board }}
           - 📂 源码: ${{ env.REPO_URL }}
           - 🌳 分支: ${{ matrix.REPO_BRANCH }}  
           - ⏱️ 编译时间: ${{ env.BUILD_DATE }}
           - 👤 用户名: root
           - 🔒 密码: password
-          - 📒 说明: 默认网口为LAN，旁路由模式，需要接入主路由器后进后台查找对应IP地址再访问。
+          
+          ### 网络配置说明
+          ${{ inputs.board == 'h3399pc' && '- 🌐 网络模式: **双网口路由器模式**
+          - 📡 **WAN 口 (eth1)**: PCIe RTL8168 千兆网卡 → 连接上级路由器或光猫
+          - 🔌 **LAN 口 (eth0)**: 板载 gmac 网口 → 连接电脑或交换机  
+          - 🏠 LAN IP: 192.168.100.1
+          - ✅ WAN 口自动从上级路由器获取 IP 地址' || inputs.board == 'fnet3399' && '- 🌐 网络模式: **双网口路由器模式**
+          - 📡 **WAN 口 (eth1)** → 连接上级路由器或光猫
+          - 🔌 **LAN 口 (eth0)** → 连接电脑或交换机' || inputs.board == 'fine3399' && '- 🌐 网络模式: **双网口路由器模式**
+          - 📡 **WAN 口 (eth1)** → 连接上级路由器或光猫
+          - 🔌 **LAN 口 (eth0)** → 连接电脑或交换机' || '- 🌐 网络模式: **旁路由模式（单网口）**
+          - 🔌 默认网口为 LAN  
+          - 📒 需要接入主路由器后进后台查找对应 IP 地址再访问' }}
+          
           ### iStoreOS Image Verification  
           - sha256sum   
         draft: false  
