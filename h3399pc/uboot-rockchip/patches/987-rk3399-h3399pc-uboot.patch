@@ -116,7 +116,7 @@ new file mode 100644
 index 0000000000..f51f930e1c
 --- /dev/null
 +++ b/dts/upstream/src/arm64/rockchip/rk3399-h3399pc.dts
-@@ -0,0 +1,837 @@
+@@ -0,0 +1,835 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2017 Fuzhou Rockchip Electronics Co., Ltd.
