@@ -1,8 +1,18 @@
-# ShareVDI H3399PC (G9) 硬件规格文档
+
+# ShareVDI H3399PC (X9) 硬件规格文档
+
+> [!NOTE]
+> 本文档经过 `android7.dts` (原厂固件) 验证，包含精确的 GPIO 定义。
+
 
 ## 设备概述
 
-**ShareVDI H3399PC (产品型号: G9)** 是一款基于 Rockchip RK3399 处理器的工业级双网口软路由/网关主板，适用于家庭/小型办公室网络环境、工业自动化、边缘计算等场景。
+**ShareVDI H3399PC** (产品型号: **X9**) 是一款基于 Rockchip RK3399 处理器的工业级双网口软路由/网关主板/数字标牌播放器，适用于家庭/小型办公室网络环境、工业自动化、边缘计算等场景。
+
+> **型号说明**：
+> - **X9**：出口版型号，通常**无串口 (COM)** 接口。
+> - **主板型号**：h339pc_v1.1
+> - **备注**：本文档主要基于 X9 实机整理，G9 (国内版) 可能存在差异 (如 COM 口)，暂未验证。
 
 ---
 
@@ -68,11 +78,13 @@
 
 | 项目 | 规格 |
 |-----|------|
-| **WiFi** | 2.4GHz + 5GHz 双频 WLAN |
-| **蓝牙** | 支持 |
-| **天线接口** | SMA 外置天线 x1 (标配) |
+| **WiFi/蓝牙芯片** | **AP6356S** (Broadcom BCM4356) |
+| **WiFi 规格** | 2x2 MIMO 802.11ac, 双频 2.4G/5G |
+| **蓝牙规格** | Bluetooth 4.1 |
+| **天线接口** | SMA 外置天线 x1 |
+| **供电/唤醒** | WiFi Power (GPIO0_B2), WiFi Wake (GPIO0_A3), BT Reset (GPIO0_B1), BT Wake (GPIO0_A4) |
 
-> **注意**：WiFi/蓝牙模块可能为可选配置，iStoreOS 固件默认不包含无线驱动。
+> **注意**：原厂 Android 固件中配置了 `wireless-wlan` 节点 (ap6356s)，OpenWrt 需相应固件支持。
 
 ---
 
@@ -95,12 +107,12 @@
 
 ### 显示接口
 
-| 接口 | 数量 | 最大分辨率 | 刷新率 |
-|-----|------|-----------|--------|
-| **HDMI 2** | 1 | 1920×1080 | 60Hz |
-| **HDMI 1** | 1 | 4096×2160 (4K) | 30Hz |
+| 接口 | 数量 | 最大分辨率 | 刷新率 | 备注 |
+|-----|------|-----------|--------|------|
+| **HDMI - 1 (Main Screen)** | 1 | 1920×1080 | 60Hz | **DSI 转 HDMI** (LT8912), 对应 DTS `dsi@ff968000` |
+| **HDMI - 2 (Sub Screen)** | 1 | 4096×2160 (4K) | 60Hz | **原生 HDMI 2.0** (RK3399), 对应 DTS `hdmi@ff940000` |
 
-**总计**：2个 HDMI 接口
+**总计**：2个 HDMI 接口 (支持双屏异显，后置面板标示为 Main/Sub)
 
 ---
 
@@ -131,7 +143,8 @@
 | **数量** | 2 (可扩展) |
 | **说明** | 支持外置 RS485 转换模块 |
 
-> 适用于工业自动化、数据采集等场景
+> **注意**：**X9** 机身通常无预留 COM 口开孔。
+> 适用于数字标牌、工业控制等场景
 
 ---
 
@@ -146,12 +159,14 @@
 
 ## 扩展与外设
 
+## 扩展与外设
+
 ### 扩展卡槽
 
-| 插槽 | 规格 | 占用情况 |
-|-----|------|---------|
-| **PCIe 2.0** | x1 | **已占用**：RTL8111F 千兆网卡 |
-| **TF 卡槽** | 1x | 支持存储扩展 |
+| 插槽 | 规格 | 占用情况 | 备注 |
+|-----|------|---------|------|
+| **PCIe 2.0** | x1 (x4物理插槽) | **已占用**：RTL8111F 千兆网卡 | 供电: GPIO4_D5, 复位: GPIO4_D3 |
+| **TF 卡槽** | 1x | 支持存储扩展 | 供电: GPIO4_D6 |
 
 ### SIM 卡
 
@@ -161,11 +176,162 @@
 
 ### 其他功能
 
-| 功能 | 规格 |
-|-----|------|
-| **RTC (实时时钟)** | 支持 |
-| **看门狗** | 支持 (可定制) |
-| **GPIO** | 通过排针引出 |
+| 功能 | 规格 | GPIO 定义 (DTS) |
+|-----|------|-----------------|
+| **RTC (实时时钟)** | 支持 | `rk808` PMIC 集成 |
+| **看门狗** | 支持 | `snps,dw-wdt` |
+| **红外遥控** | 支持 | `pwm3a` (GPIO0_A6) |
+
+---
+
+## 底层硬件定义 (DTS 深度验证)
+
+以下数据直接提取自原厂 `android7.dts` 文件，包含原始 Hex 数值以便核对。
+
+### 内存配置 (DDR)
+
+| 项目 | 规格 | DTS 原始定义 (部分) | 备注 |
+|-----|------|--------------------|------|
+| **容量** | 4GB (实际可用约 3.8GB) | `reg = <0x0 0x200000 ... 0x0 0xede00000>` | 内存映射包含保留区域 |
+| **类型** | LPDDR4 | `lpddr4_odt_dis_freq = <0x320>` | 频率配置对应 LPDDR4 |
+| **节点** | /memory | `device_type = "memory"` | - |
+
+### GPIO / 供电控制映射表
+
+> **说明**：`phandle` 映射：`0xd2`=&gpio0, `0x36`=&gpio1, `0x19`=&gpio3, `0x89`=&gpio4
+
+| 硬件功能 | 描述 | GPIO 编号 | 原厂 DTS 原始数据 (Hex) | 有效电平 | 备注 |
+|---------|------|----------|------------------------|---------|------|
+| **WAN 网卡复位** | RTL8111F Reset | **GPIO4_D3** | `ep-gpios = <0x89 0x1b 0x00>` | High | 0x1b = 27 (D3) |
+| **LAN 网卡复位** | RTL8211E Reset | **GPIO3_B7** | `snps,reset-gpio = <0x19 0x0f 0x01>` | Low | 0x0f = 15 (B7) |
+| **PCIe 3.3V 电源** | PCIe Slot Power | **GPIO4_D5** | Pinctrl: `<0x04 0x1d ...>` | High | 0x1d = 29 (D5) |
+| **TF 卡 3.3V 电源** | SD Card VCC | **GPIO4_D6** | Pinctrl: `<0x04 0x1e ...>` | High | 0x1e = 30 (D6) |
+| **USB 5V 电源** | USB Hub Power | **GPIO1_A0** | `gpio = <0x36 0x00 0x00>` | High | 0x00 = 0 (A0) |
+| **电源指示灯** | Power LED (Red) | **GPIO0_B5** | `gpios = <0xd2 0x0d 0x00>` | High | 0x0d = 13 (B5) |
+| **用户指示灯** | User LED (Green) | **GPIO0_B4** | `gpios = <0xd2 0x0c 0x00>` | High | 0x0c = 12 (B4) |
+| **电源按键** | Power Button | **GPIO0_A5** | `gpios = <0xd2 0x05 0x01>` | Low | 0x05 = 5 (A5) |
+| **红外接收** | IR Receiver | **GPIO0_A6** | `pwm3a` | 固件未默认启用 |
+
+### I2C 总线设备表
+
+| 总线 | 地址 | 芯片/设备 | 功能描述 | 备注 |
+|------|------|----------|----------|------|
+| **I2C0** | 0x1b | **RK808** | PMIC 电源管理芯片 | - |
+| **I2C0** | 0x40 | **SYR827** | CPU (Big) 核心供电 | - |
+| **I2C0** | 0x41 | **SYR828** | GPU 核心供电 | - |
+| **I2C1** | 0x10 | **ES8316** | 音频 Codec | 耳机/麦克风 |
+| **I2C2** | 0x48 | **LT8912** | DSI 转 HDMI 桥接 | 仅在启用 HDMI2 时需要 |
+| **I2C4** | 0x22 | **FUSB302** | Type-C PD 控制器 | 板载保留/调试用 (无物理接口) |
+
+### 按键与 LED 定义
+| 功能 | GPIO / 类型 | 原始 DTS 定义 | 备注 |
+|-----|------------|--------------|------|
+| **Power Key** | **GPIO0_A5** | `linux,code = <116>` (KEY_POWER) | 低电平有效 |
+| **Recovery** | **ADC Key** | `linux,code = <113>` (KEY_MUTE/F12) | 通道 1, 值 0x04 |
+| **Power LED** | **GPIO0_B5** | `label = "sharevdi:red:power"` | 高电平点亮 |
+| **User LED** | **GPIO0_B4** | `label = "sharevdi:blue:user"` | 高电平点亮 |
+
+
+### 冲突分析报告
+
+在原厂 `android7.dts` 中，PCIe 电源调节器 (`vdd3v3-pcie-regulator`) 存在定义冲突：
+- **GPIO 属性**: `gpio = <0x36 0x11 0x00>` (对应 **GPIO1_C1**)。
+- **Pinctrl 属性**: 引用 `pcie_drv` 节点，物理定义为 `<4 29 ...>` (对应 **GPIO4_D5**)。
+- **结论**: 经 OpenWrt 实测及 DTS 逻辑分析，`vdd3v3-pcie-regulator` 节点同时引用了 `gpio` (旧定义) 和 `pinctrl` (新定义)。在 Rockchip 内核中，pinctrl 优先级更高或作为实际驱动引脚。`pcie-drv` 明确指向 **GPIO4_D5**，因此确认 **GPIO4_D5** 为真实控制引脚。
+
+
+---
+
+## 可扩展硬件支持 (Android / 未来开发参考)
+
+以下配置信息从原厂固件提取并验证，**当前 iStoreOS 固件由用户要求默认禁用**，仅供未来适配 Android 或高级功能时参考。
+
+<details>
+<summary><b>1. 双 HDMI 支持 (DSI -> LT8912)</b></summary>
+
+若需启用第二个 HDMI 接口，需移植 `lontium-lt8912` 驱动并在 DTS 中添加：
+
+```dts
+// 根节点添加连接器
+hdmi2: connector-hdmi2 {
+    compatible = "hdmi-connector";
+    label = "HDMI2";
+    type = "a";
+    port {
+        hdmi2_con: endpoint {
+            remote-endpoint = <&lt8912_out>;
+        };
+    };
+};
+
+// I2C2 节点下挂载桥接芯片
+&i2c2 {
+    status = "okay";
+    lt8912: bridge@48 {
+        compatible = "lontium,lt8912b";
+        reg = <0x48>;
+        reset-gpios = <&gpio2 RK_PA2 GPIO_ACTIVE_LOW>;
+        ports {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            port@0 {
+                reg = <0>;
+                lt8912_in: endpoint { remote-endpoint = <&mipi_dsi1_out>; };
+            };
+            port@1 {
+                reg = <1>;
+                lt8912_out: endpoint { remote-endpoint = <&hdmi2_con>; };
+            };
+        };
+    };
+};
+
+// 启用 DSI1 控制器
+&mipi_dsi1 {
+    status = "okay";
+    ports {
+        mipi_dsi1_out: port@1 {
+            reg = <1>;
+            remote-endpoint = <&lt8912_in>;
+        };
+    };
+};
+```
+</details>
+
+<details>
+<summary><b>2. 无线与蓝牙 (AP6356S)</b></summary>
+
+无线模块供电与 `sdio0` 绑定，若需优化休眠唤醒：
+
+```dts
+&sdio0 {
+    // 在节点内部添加 Broadcom 无线定义
+    brcmf: wifi@1 {
+        compatible = "brcm,bcm4329-fmac";
+        reg = <1>;
+        interrupt-parent = <&gpio0>;
+        interrupts = <RK_PA3 IRQ_TYPE_LEVEL_HIGH>; // OOB 中断
+        interrupt-names = "host-wake";
+    };
+};
+```
+</details>
+
+<details>
+<summary><b>3. 红外遥控 (IR)</b></summary>
+
+由 `pwm3a` 引脚控制，尽管物理板可能未焊接接收头：
+
+```dts
+ir-receiver {
+    compatible = "gpio-ir-receiver";
+    gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_LOW>;
+    pinctrl-0 = <&pwm3a_pin>;
+    pinctrl-names = "default";
+};
+```
+</details>
 
 ---
 
@@ -204,7 +370,7 @@
 
 | 项目 | 规格 |
 |-----|------|
-| **外壳尺寸** | 133 mm × 126 mm × 36 mm |
+| **物理尺寸** | 121.5 mm × 121.5 mm × 36 mm |
 | **包装尺寸** | 250 mm × 190 mm × 60 mm |
 | **净重** | 0.56 kg |
 | **毛重** | 1.1 kg |
@@ -275,7 +441,7 @@
 
 ```
 ┌─────────────────────────────────┐
-│      ShareVDI H3399PC G9        │
+│      ShareVDI H3399PC X9        │
 │                                 │
 │  [网口1] ← eth0 / LAN           │
 │  RTL8211E                       │
@@ -315,7 +481,7 @@
 
 | 配件 | 数量 | 说明 |
 |-----|------|------|
-| **主机** | 1 | H3399PC G9 主板 |
+| **主机** | 1 | H3399PC X9 主板 |
 | **电源适配器** | 1 | DC 12V 2A |
 | **WiFi 天线** | 1 | SMA 接口 (如配备 WiFi 模块) |
 | **背挂支架** | 1 | 壁挂安装用 |
@@ -352,14 +518,14 @@
 
 ### 与同类产品对比
 
-| 特性 | H3399PC G9 | 软路由 X86 | 树莓派 4B |
+| 特性 | H3399PC X9 | 软路由 X86 | 树莓派 4B |
 |-----|-----------|-----------|-----------|
 | **处理器** | RK3399 (6核) | x86 (4核+) | BCM2711 (4核) |
 | **网口** | 2x 千兆 | 2-4x 千兆 | 1x 千兆 |
 | **内存** | 4GB LPDDR4 | 4-16GB DDR4 | 2-8GB LPDDR4 |
 | **存储** | 64GB eMMC | 128GB+ SSD | MicroSD |
 | **功耗** | 5-15W | 15-35W | 3-7W |
-| **串口** | RS232x2, RS485x2 | 少/无 | GPIO UART |
+| **串口** | 无 (X9) | 少/无 | GPIO UART |
 | **价格** | 中等 | 较高 | 较低 |
 | **工业级** | ✅ | ✅ | ❌ |
 
@@ -395,8 +561,7 @@
 
 ## 版本历史
 
-| 版本 | 日期 | 更新内容 |
-|-----|------|---------|
+| v1.2 | 2026-02-01 | 更新产品型号为 X9，标注主板版本 h339pc_v1.1 |
 | v1.1 | 2026-01-30 | 根据官方产品规格表更新详细硬件信息 |
 | v1.0 | 2026-01-30 | 初始版本，基础硬件规格整理 |
 
@@ -408,6 +573,34 @@
 
 ---
 
-**文档最后更新**：2026-01-30
-**适用产品型号**：G9 (H339PC / H3399PC)
+**文档最后更新**：2026-02-01
+**适用产品型号**：ShareVDI X9
+**主板版本**：h339pc_v1.1
 **硬件版本**：通用
+
+## 内核开发高级参考 (Reverse Engineered from android7.dts)
+
+以下数据通过对原厂 `android7.dts` 进行反向工程提取，供内核开发者和发烧友参考。
+
+### 1. 频率与性能 (OPP Table)
+- **Big Cluster (Cortex-A72)**: 最高频率 **1.8GHz** (1800MHz @ 1.25V), 对应 `opp-1800000000`。
+- **Little Cluster (Cortex-A53)**: 最高频率 **1.4GHz** (1416MHz @ 1.125V), 对应 `opp-1416000000`。
+- **GPU (Mali-T860)**: 默认最高 **800MHz**。
+- **DDR**: LPDDR4 频率通常动态调整，最高支持 800MHz (1600Mbps)。
+
+### 2. 热管理策略 (Thermal)
+原厂固件定义的温控策略非常保守，旨在保护无风扇被动散热的机身：
+- **Passive Cooling (降频线)**: **70°C** (Trip Point 0)
+- **Critical Shutdown (强制关机)**: **115°C** (Soc Critical)
+- **Cooling Maps**: 
+    - 70°C 时，CPU 大核/小核开始逐步降频。
+    - GPU 也会参与降频以降低整机功耗。
+
+### 3. 保留内存 (Reserved Memory)
+- **DRM Logo**: `0x00000000` - `0x00000000` (未具体定义，但在 u-boot 中通常保留)。
+- **RGA Buffer**: 用于 2D 硬件加速，需在内核中预留足够 CMA 内存。
+
+### 4. 时钟分配 (Clocks)
+- **PCIe Clock**: 100MHz (由内部 PLL 生成)
+- **Ethernet (RGMII)**: 125MHz (由 PLL 生成，非外部晶振)
+- **WiFi (SDIO)**: 外部时钟输入 (通常 32.768kHz 用于休眠保持)
