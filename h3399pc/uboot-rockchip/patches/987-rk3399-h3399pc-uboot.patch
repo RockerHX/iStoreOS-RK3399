@@ -116,7 +116,7 @@ new file mode 100644
 index 0000000000..f51f930e1c
 --- /dev/null
 +++ b/dts/upstream/src/arm64/rockchip/rk3399-h3399pc.dts
-@@ -0,0 +1,835 @@
+@@ -0,0 +1,836 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2017 Fuzhou Rockchip Electronics Co., Ltd.
@@ -178,15 +178,15 @@ index 0000000000..f51f930e1c
 +		pinctrl-names = "default";
 +
 +		work_led: led-0 {
-+			label = "work";
++			label = "sharevdi:red:power";
 +			default-state = "on";
-+			gpios = <&gpio0 RK_PB4 GPIO_ACTIVE_HIGH>;
++			gpios = <&gpio0 RK_PB5 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		diy_led: led-1 {
-+			label = "diy";
++			label = "sharevdi:blue:user";
 +			default-state = "off";
-+			gpios = <&gpio0 RK_PB5 GPIO_ACTIVE_HIGH>;
++			gpios = <&gpio0 RK_PB4 GPIO_ACTIVE_HIGH>;
 +		};
 +	};
 +
@@ -311,15 +311,15 @@ index 0000000000..f51f930e1c
 +		vin-supply = <&vcc_sys>;
 +	};
 +
-+	vcc5v0_hub: vcc5v0-hub-regulator {
++	vcc3v3_sd: vcc3v3-sd-regulator {
 +		compatible = "regulator-fixed";
 +		enable-active-high;
 +		gpio = <&gpio4 RK_PD6 GPIO_ACTIVE_HIGH>;
 +		pinctrl-names = "default";
-+		pinctrl-0 = <&vcc5v0_hub_en>;
-+		regulator-name = "vcc5v0_host";
++		pinctrl-0 = <&vcc3v3_sd_en>;
++		regulator-name = "vcc3v3_sd";
 +		regulator-always-on;
-+		vin-supply = <&vcc_sys>;
++		vin-supply = <&vcc3v3_sys>;
 +	};
 +
 +	vcc_sys: vcc-sys {
@@ -646,9 +646,9 @@ index 0000000000..f51f930e1c
 +	i2c-scl-falling-time-ns = <15>;
 +	status = "okay";
 +
-+	es8316: codec@11 {
++	es8316: codec@10 {
 +		compatible = "everest,es8316";
-+		reg = <0x11>;
++		reg = <0x10>;
 +		clocks = <&cru SCLK_I2S_8CH_OUT>;
 +		clock-names = "mclk";
 +		#sound-dai-cells = <0>;
@@ -784,11 +784,11 @@ index 0000000000..f51f930e1c
 +			rockchip,pins = <1 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>;
 +		};
 +
-+        	vcc5v0_host3_en: vcc5v0-host3-en {
++		vcc5v0_host3_en: vcc5v0-host3-en {
 +			rockchip,pins = <1 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>;
 +		};
 +
-+		vcc5v0_hub_en: vcc5v0-hub-en {
++		vcc3v3_sd_en: vcc3v3-sd-en {
 +			rockchip,pins = <4 RK_PD6 RK_FUNC_GPIO &pcfg_pull_up>;
 +		};
 +	};
@@ -831,6 +831,7 @@ index 0000000000..f51f930e1c
 +	max-frequency = <150000000>;
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&sdmmc_clk &sdmmc_cmd &sdmmc_bus4>;
++	vmmc-supply = <&vcc3v3_sd>;
 +	status = "okay";
 +};
 +
