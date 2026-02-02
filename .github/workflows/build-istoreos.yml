@@ -169,6 +169,16 @@ jobs:
         if ls bin/targets/*/*/*.img.gz >/dev/null 2>&1; then
           cp -f bin/targets/*/*/*.img.gz output/
         fi
+        
+        # 保存 U-Boot 文件（用于手动制作完整 TF 卡镜像）
+        echo "🔍 查找并保存 U-Boot 文件..."
+        if find build_dir/ -name "idbloader.img" 2>/dev/null | grep -q .; then
+          find build_dir/ -name "idbloader.img" -exec cp -v {} output/ \; 2>/dev/null || true
+          find build_dir/ -name "u-boot.itb" -exec cp -v {} output/ \; 2>/dev/null || true
+          echo "✅ U-Boot 文件已保存到 output/"
+        else
+          echo "⚠️  未找到 U-Boot 文件（如果设备不需要 U-Boot 可忽略）"
+        fi
 
         rm -rf $(ls . | grep -v "^output$" | xargs) 2>/dev/null
 
