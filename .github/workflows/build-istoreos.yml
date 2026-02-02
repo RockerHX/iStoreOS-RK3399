@@ -171,6 +171,9 @@ jobs:
         fi
         
         # 保存 U-Boot 文件（用于手动制作完整 TF 卡镜像）
+        # - 在清理步骤前保存 idbloader.img 和 u-boot.itb
+        # - 用于手动制作包含 U-Boot 的完整 TF 卡镜像
+        # - 解决 H3399PC TF 卡启动失败问题
         echo "🔍 查找并保存 U-Boot 文件..."
         if find build_dir/ -name "idbloader.img" 2>/dev/null | grep -q .; then
           find build_dir/ -name "idbloader.img" -exec cp -v {} output/ \; 2>/dev/null || true
