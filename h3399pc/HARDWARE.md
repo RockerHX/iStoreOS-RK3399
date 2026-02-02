@@ -82,7 +82,7 @@
 | **WiFi 规格** | 2x2 MIMO 802.11ac, 双频 2.4G/5G |
 | **蓝牙规格** | Bluetooth 4.1 |
 | **天线接口** | SMA 外置天线 x1 |
-| **供电/唤醒** | WiFi Power (GPIO0_B2), WiFi Wake (GPIO0_A3), BT Reset (GPIO0_B1), BT Wake (GPIO0_A4) |
+| **控制引脚** | WiFi Reset (GPIO0_B2), WiFi Wake (GPIO0_A3), BT Reset (GPIO0_B1), BT Wake (GPIO0_A4) |
 
 > **注意**：原厂 Android 固件中配置了 `wireless-wlan` 节点 (ap6356s)，OpenWrt 需相应固件支持。
 
@@ -206,7 +206,6 @@
 | **LAN 网卡复位** | RTL8211E Reset | **GPIO3_B7** | `snps,reset-gpio = <0x19 0x0f 0x01>` | Low | 0x0f = 15 (B7) |
 | **PCIe 3.3V 电源** | PCIe Slot Power | **GPIO4_D5** | Pinctrl: `<0x04 0x1d ...>` | High | 0x1d = 29 (D5) |
 | **TF 卡 3.3V 电源** | SD Card VCC | **GPIO4_D6** | Pinctrl: `<0x04 0x1e ...>` | High | 0x1e = 30 (D6) |
-| **USB 5V 电源** | USB Hub Power | **GPIO1_A0** | `gpio = <0x36 0x00 0x00>` | High | 0x00 = 0 (A0) |
 | **电源指示灯** | Power LED (Red) | **GPIO0_B5** | `gpios = <0xd2 0x0d 0x00>` | High | 0x0d = 13 (B5) |
 | **用户指示灯** | User LED (Green) | **GPIO0_B4** | `gpios = <0xd2 0x0c 0x00>` | High | 0x0c = 12 (B4) |
 | **电源按键** | Power Button | **GPIO0_A5** | `gpios = <0xd2 0x05 0x01>` | Low | 0x05 = 5 (A5) |
@@ -220,8 +219,7 @@
 | **I2C0** | 0x40 | **SYR827** | CPU (Big) 核心供电 | - |
 | **I2C0** | 0x41 | **SYR828** | GPU 核心供电 | - |
 | **I2C1** | 0x10 | **ES8316** | 音频 Codec | 耳机/麦克风 |
-| **I2C2** | 0x48 | **LT8912** | DSI 转 HDMI 桥接 | 仅在启用 HDMI2 时需要 |
-| **I2C4** | 0x22 | **FUSB302** | Type-C PD 控制器 | 板载保留/调试用 (无物理接口) |
+| **I2C2** | 0x00 | **LT8912** | DSI 转 HDMI 桥接 | 主HDMI输出(HDMI-1) |
 
 ### 按键与 LED 定义
 | 功能 | GPIO / 类型 | 原始 DTS 定义 | 备注 |
