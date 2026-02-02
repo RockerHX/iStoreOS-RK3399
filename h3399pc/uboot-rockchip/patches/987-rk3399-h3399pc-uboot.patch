@@ -741,11 +741,11 @@ index 0000000000..f51f930e1c
 +
 +	leds {
 +		work_led_pin: work-led-pin {
-+			rockchip,pins = <0 RK_PB4 RK_FUNC_GPIO &pcfg_pull_none>;
++			rockchip,pins = <0 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +
 +		diy_led_pin: diy-led-pin {
-+			rockchip,pins = <0 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
++			rockchip,pins = <0 RK_PB4 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +	};
 +
