@@ -18,6 +18,7 @@ define Device/sharevdi_h3399pc
   DEVICE_MODEL := H3399PC
   SOC := rk3399
   UBOOT_DEVICE_NAME := h3399pc-rk3399
+  IMAGE/sdcard.img.gz := boot-common | boot-script | rockchip-img | gzip | append-metadata
   IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
   DEVICE_PACKAGES := kmod-r8168 kmod-usb3 -wpad-basic-mbedtls -urngd
 endef
