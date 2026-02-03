@@ -179,18 +179,53 @@ jobs:
           echo "⚠️  未找到 U-Boot 文件（如果设备不需要 U-Boot 可忽略）"
         fi
         
-        # 步骤2: 处理镜像文件（关键改进：直接使用 .img，不解压 .gz）
+        # 步骤2: 处理镜像文件（智能查找：优先 .img，回退 .img.gz）
         if [ $UBOOT_FOUND -eq 1 ]; then
           echo ""
           echo "🔧 自动生成 sdcard.img (包含 U-Boot)..."
           
-          # 直接查找编译生成的 .img 文件（压缩前）
+          # 优先查找未压缩的 .img 文件
           SYSUPGRADE_IMGS=$(find bin/targets/*/*/ -name "*-sysupgrade.img" -type f 2>/dev/null)
           
           if [ -n "$SYSUPGRADE_IMGS" ]; then
-            for SYSUPGRADE_IMG in $SYSUPGRADE_IMGS; do
+            echo "✅ 找到未压缩的 .img 文件"
+            NEEDS_DECOMPRESS=0
+          else
+            # 如果找不到 .img，查找 .img.gz 文件
+            echo "⚠️  未找到 .img 文件，尝试查找 .img.gz..."
+            SYSUPGRADE_IMGS=$(find bin/targets/*/*/ -name "*-sysupgrade.img.gz" -type f 2>/dev/null)
+            
+            if [ -n "$SYSUPGRADE_IMGS" ]; then
+              echo "✅ 找到压缩的 .img.gz 文件，准备解压"
+              NEEDS_DECOMPRESS=1
+            else
+              echo "❌ 未找到任何镜像文件，跳过 sdcard.img 生成"
+              NEEDS_DECOMPRESS=-1
+            fi
+          fi
+          
+          if [ $NEEDS_DECOMPRESS -ge 0 ]; then
+            for SYSUPGRADE_FILE in $SYSUPGRADE_IMGS; do
               echo ""
-              echo "📂 处理: $(basename $SYSUPGRADE_IMG)"
+              echo "📂 处理: $(basename $SYSUPGRADE_FILE)"
+              
+              # 如果是 .gz 文件，先解压
+              if [ $NEEDS_DECOMPRESS -eq 1 ]; then
+                echo "📦 解压: $(basename $SYSUPGRADE_FILE)"
+                # 使用 -f 强制覆盖，-k 保留原文件，忽略所有警告和错误输出
+                gunzip -f -k "$SYSUPGRADE_FILE" 2>/dev/null || true
+                # 生成解压后的文件路径
+                SYSUPGRADE_IMG="${SYSUPGRADE_FILE%.gz}"
+                
+                # 验证解压是否成功
+                if [ ! -f "$SYSUPGRADE_IMG" ]; then
+                  echo "❌ 解压失败，跳过此文件"
+                  continue
+                fi
+                echo "✅ 解压完成: $(basename $SYSUPGRADE_IMG)"
+              else
+                SYSUPGRADE_IMG="$SYSUPGRADE_FILE"
+              fi
               
               # 生成对应的 sdcard.img 路径
               SDCARD_IMG="${SYSUPGRADE_IMG/-sysupgrade.img/-sdcard.img}"
@@ -223,9 +258,13 @@ jobs:
               # 复制到 output
               cp -f "$SDCARD_GZ" output/
               echo "✅ $(basename $SDCARD_GZ) 已生成"
+              
+              # 清理临时解压的 .img 文件（如果是从 .gz 解压的）
+              if [ $NEEDS_DECOMPRESS -eq 1 ] && [ -f "$SYSUPGRADE_IMG" ]; then
+                echo "🧹 清理临时文件: $(basename $SYSUPGRADE_IMG)"
+                rm -f "$SYSUPGRADE_IMG"
+              fi
             done
-          else
-            echo "⚠️  未找到 .img 文件，跳过 sdcard.img 生成"
           fi
         fi
         
