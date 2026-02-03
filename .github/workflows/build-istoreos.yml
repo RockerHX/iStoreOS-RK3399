@@ -268,9 +268,11 @@ jobs:
           fi
         fi
         
-        # 步骤3: 复制所有 .img.gz 到 output
+        # 步骤3: 复制原始镜像文件到 output（排除 sdcard.img.gz）
+        echo "📦 复制原始系统镜像..."
         if ls bin/targets/*/*/*.img.gz >/dev/null 2>&1; then
-          cp -f bin/targets/*/*/*.img.gz output/
+          # 排除 sdcard.img.gz，避免覆盖 sysupgrade.img.gz
+          find bin/targets/*/*/ -name "*.img.gz" ! -name "*-sdcard.img.gz" -exec cp -v {} output/ \;
         fi
 
         rm -rf $(ls . | grep -v "^output$" | xargs) 2>/dev/null
