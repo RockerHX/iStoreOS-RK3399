@@ -174,7 +174,7 @@
 | 插槽 | 规格 | 占用情况 | 备注 |
 |-----|------|---------|------|
 | **PCIe 2.0** | x1 (x4物理插槽) | **已占用**：RTL8111F 千兆网卡 | 供电: GPIO4_D5, 复位: GPIO4_D3 |
-| **TF 卡槽** | 1x | 支持存储扩展 | 供电: GPIO4_D6 |
+| **TF 卡槽** | 1x | 支持存储扩展 | 系统供电 (无独立GPIO控制) |
 
 ### SIM 卡
 
@@ -221,9 +221,9 @@
 | **WAN 网卡复位** | RTL8111F Reset | **GPIO4_D3** | `ep-gpios = <0x89 0x1b 0x00>` | High | 0x1b = 27 (D3) |
 | **LAN 网卡复位** | RTL8211E Reset | **GPIO3_B7** | `snps,reset-gpio = <0x19 0x0f 0x01>` | Low | 0x0f = 15 (B7) |
 | **PCIe 3.3V 电源** | PCIe Slot Power | **GPIO4_D5** | Pinctrl: `<0x04 0x1d ...>` | High | 0x1d = 29 (D5) |
-| **TF 卡 3.3V 电源** | SD Card VCC | **GPIO4_D6** | Pinctrl: `<0x04 0x1e ...>` | High | 0x1e = 30 (D6) |
-| **电源指示灯** | Power LED (Red) | **GPIO0_B5** | `gpios = <0xd2 0x0d 0x00>` | High | 0x0d = 13 (B5) |
-| **用户指示灯** | User LED (Green) | **GPIO0_B4** | `gpios = <0xd2 0x0c 0x00>` | High | 0x0c = 12 (B4) |
+| **USB Hub 5V 电源** | USB Hub VCC | **GPIO4_D6** | Pinctrl: `<0x04 0x1e ...>` | High | 0x1e = 30 (D6) |
+| **电源指示灯** | Work LED (Red) | **GPIO0_B4** | `gpios = <0xd2 0x0c 0x00>` | High | 0x0c = 12 (B4) |
+| **用户指示灯** | User LED (Blue) | **GPIO0_B5** | `gpios = <0xd2 0x0d 0x00>` | High | 0x0d = 13 (B5) |
 | **电源按键** | Power Button | **GPIO0_A5** | `gpios = <0xd2 0x05 0x01>` | Low | 0x05 = 5 (A5) |
 | **红外接收** | IR Receiver | **GPIO0_A6** | `pwm3a` | 固件未默认启用 |
 
@@ -234,7 +234,7 @@
 | **I2C0** | 0x1b | **RK808** | PMIC 电源管理芯片 | - |
 | **I2C0** | 0x40 | **SYR827** | CPU (Big) 核心供电 | - |
 | **I2C0** | 0x41 | **SYR828** | GPU 核心供电 | - |
-| **I2C1** | 0x10 | **ES8316** | 音频 Codec | 耳机/麦克风 |
+| **I2C1** | 0x11 | **ES8316** | 音频 Codec | 耳机/麦克风 |
 | **I2C2** | 0x00 | **LT8912** | DSI 转 HDMI 桥接 | 主HDMI输出(HDMI-1) |
 
 ### 按键与 LED 定义
@@ -242,16 +242,16 @@
 |-----|------------|--------------|------|
 | **Power Key** | **GPIO0_A5** | `linux,code = <116>` (KEY_POWER) | 低电平有效 |
 | **Recovery** | **ADC Key** | `linux,code = <113>` (KEY_MUTE/F12) | 通道 1, 值 0x04 |
-| **Power LED** | **GPIO0_B5** | `label = "sharevdi:red:power"` | 高电平点亮 |
-| **User LED** | **GPIO0_B4** | `label = "sharevdi:blue:user"` | 高电平点亮 |
+| **Work LED** | **GPIO0_B4** | `label = "work"` | 高电平点亮 |
+| **User LED** | **GPIO0_B5** | `label = "diy"` | 高电平点亮 |
 
 
-### 冲突分析报告
+### 引脚配置说明
 
-在原厂 `android7.dts` 中，PCIe 电源调节器 (`vdd3v3-pcie-regulator`) 存在定义冲突：
-- **GPIO 属性**: `gpio = <0x36 0x11 0x00>` (对应 **GPIO1_C1**)。
-- **Pinctrl 属性**: 引用 `pcie_drv` 节点，物理定义为 `<4 29 ...>` (对应 **GPIO4_D5**)。
-- **结论**: 经 OpenWrt 实测及 DTS 逻辑分析，`vdd3v3-pcie-regulator` 节点同时引用了 `gpio` (旧定义) 和 `pinctrl` (新定义)。在 Rockchip 内核中，pinctrl 优先级更高或作为实际驱动引脚。`pcie-drv` 明确指向 **GPIO4_D5**，因此确认 **GPIO4_D5** 为真实控制引脚。
+基于实际硬件验证和 h339pc 成功配置：
+- **GPIO0_B4** (引脚 12)：工作指示灯 (Work LED)
+- **GPIO0_B5** (引脚 13)：用户指示灯 (DIY LED)
+- **GPIO4_D6** (引脚 30)：USB Hub 电源控制
 
 
 ---
@@ -367,8 +367,8 @@ ir-receiver {
 
 | LED | 颜色 | 功能 |
 |-----|------|------|
-| **电源指示灯** | 红色 | 电源状态 |
-| **工作指示灯** | 绿色 | 系统运行状态 |
+| **工作指示灯** | 红色 | 系统工作状态 (Work LED - GPIO0_B4) |
+| **用户指示灯** | 蓝色 | 用户自定义 (DIY LED - GPIO0_B5) |
 
 ### 按键
 
